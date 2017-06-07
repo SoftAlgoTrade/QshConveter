@@ -68,7 +68,7 @@ namespace QshLib
                 if (CheckFileName(file)) filesList.Add(file);
 
             _total = filesList.Count;
-            
+
             //Разбиваем на партии
             var parts = new List<List<string>>();
             var buffer = new List<string>();
@@ -110,29 +110,6 @@ namespace QshLib
 
                         if (_sourceDataType == SourceDataType.Deals)
                             totalList.Add(DealsReader(file));
-
-                        //if (_sourceDataType == SourceDataType.Quotes)
-                        //{
-                        //    var quotesArray = QuotesReader(file);
-
-                        //    foreach (var quote in quotesArray.SelectMany(quotes => quotes))
-                        //        Debug.WriteLine($"{quote.Volume} {quote.Price} {quote.Type}");
-                        //}
-
-                        //if (_sourceDataType == SourceDataType.AuxInfo)
-                        //{
-                        //    var auxInfos = AuxInfoReader(file);
-
-                        //    foreach (var auxInfo in auxInfos)
-                        //        Debug.WriteLine($"{auxInfo.DateTime.ToString("dd.MM.yyyy HH:mm:ss.fff")} {auxInfo.Price} {auxInfo.Deposit} {auxInfo.Message}");
-                        //}
-
-                        //foreach (var deal in list)
-                        //    s.Add($"{deal.ID} {deal.Time.ToString("dd.MM.yyyy HH:mm:ss.fff")} {deal.Volume} {deal.Price} {deal.Aggressor}");
-
-                        //foreach (var trade in list)
-                        //    Debug.WriteLine($"{trade.Time.ToString("dd.MM.yyyy HH:mm:ss.fff")} {trade.ID} {trade.Volume} {trade.Price} {trade.Aggressor} {trade.BestBid.Price}|{trade.BestBid.Volume} {trade.BestAsk.Price}|{trade.BestAsk.Volume} {trade.BestAsk.Price-trade.BestBid.Price}");
-
 
                         foreach (var list in totalList)
                         {
@@ -286,7 +263,7 @@ namespace QshLib
                 if (stream == null) return list;
 
                 var security = SecurityConverter(stream.Security);
-                
+
                 using (var converter = new OrderLogToMarketDepth(security))
                 {
                     converter.NewTick += tick =>
@@ -296,7 +273,7 @@ namespace QshLib
                         var lastList = list[list.Count - 1];
 
                         if (lastList.Count > 0)
-                            lastDate = lastList[lastList.Count-1].Time.Date;
+                            lastDate = lastList[lastList.Count - 1].Time.Date;
 
                         if (tick.Time.Date > lastDate)
                             list.Add(new List<Trade>());
@@ -313,6 +290,7 @@ namespace QshLib
 
             return list;
         }
+
         private static OrderLog OrdLogConverter(OrdLogEntry ol)
         {
             var states = new HashSet<OrderLogStates>();
@@ -371,84 +349,6 @@ namespace QshLib
                                 Security = security,
                                 Aggressor = DealTypeConverter(dael.Type)
                             });
-                        };
-                    }
-
-                    while (qr.CurrentDateTime != DateTime.MaxValue)
-                    {
-                        qr.Read(true);
-                    }
-                }
-                catch (Exception e)
-                {
-                    Debug.WriteLine(e.ToString());
-                }
-            }
-
-            return list;
-        }
-
-        //Массивы котировок
-        private List<QScalp.Quote[]> QuotesReader(string filePath)
-        {
-            var list = new List<QScalp.Quote[]>();
-
-            using (var qr = QshReader.Open(filePath))
-            {
-                try
-                {
-                    for (var i = 0; i < qr.StreamCount; i++)
-                    {
-                        var stream = qr[i] as IQuotesStream;
-
-                        if (stream == null) return list;
-
-                        var security = SecurityConverter(stream.Security);
-
-                        var step = (decimal) stream.Security.Step;
-
-                        stream.Handler += quotes =>
-                        {
-                            list.Add(quotes);
-                        };
-                    }
-
-                    while (qr.CurrentDateTime != DateTime.MaxValue)
-                    {
-                        qr.Read(true);
-                    }
-                }
-                catch (Exception e)
-                {
-                    Debug.WriteLine(e.ToString());
-                }
-            }
-
-            return list;
-        }
-
-        //Дополнительная информация
-        private List<AuxInfo> AuxInfoReader(string filePath)
-        {
-            var list = new List<AuxInfo>();
-
-            using (var qr = QshReader.Open(filePath))
-            {
-                try
-                {
-                    for (var i = 0; i < qr.StreamCount; i++)
-                    {
-                        var stream = qr[i] as IAuxInfoStream;
-
-                        if (stream == null) return list;
-
-                        var security = SecurityConverter(stream.Security);
-
-                        var step = (decimal) stream.Security.Step;
-
-                        stream.Handler += auxInfo =>
-                        {
-                            list.Add(auxInfo);
                         };
                     }
 
