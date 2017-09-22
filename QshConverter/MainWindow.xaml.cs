@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Forms;
@@ -32,6 +35,8 @@ namespace QshConverter
 
             if (!Directory.Exists(gshStoragePath)) return;
 
+            MoveFilesToDirs(gshStoragePath);
+
             ConvertBtn.IsEnabled = false;
 
             TbProgress.Text = "0% ...";
@@ -56,8 +61,8 @@ namespace QshConverter
         {
             var sdt = SourceDataType.AuxInfo;
 
-            if ((bool) OrdLog.IsChecked) sdt = SourceDataType.OrderLog;
-            else if ((bool) Deals.IsChecked) sdt = SourceDataType.Deals;
+            if (OrdLog.IsChecked != null && (bool) OrdLog.IsChecked) sdt = SourceDataType.OrderLog;
+            else if (Deals.IsChecked != null && (bool) Deals.IsChecked) sdt = SourceDataType.Deals;
 
             return sdt;
         });
@@ -74,6 +79,42 @@ namespace QshConverter
             var openFolderDialog = new FolderBrowserDialog();
             openFolderDialog.ShowDialog();
             QshStoragePath.Text = openFolderDialog.SelectedPath;
+        }
+
+        private void MoveFilesToDirs(string gshStoragePath)
+        {
+
+            try
+            {
+                var ordLogList = Directory.GetFiles(gshStoragePath, "*.OrdLog.qsh").ToList<string>();
+                var dealsList = Directory.GetFiles(gshStoragePath, "*.Deals.qsh").ToList<string>();
+
+                FindAndMove(gshStoragePath, ordLogList);
+                FindAndMove(gshStoragePath, dealsList);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+                throw;
+            }
+            
+        }
+
+        private static void FindAndMove(string gshStoragePath, List<string> ordLogList)
+        {
+            foreach (var ordFile in ordLogList)
+            {
+                var fileInfo = new FileInfo(ordFile);
+                var pattern = @"(\d{4}\W\d{2}\W\d{2})";
+
+                var folderName = Regex.Match(fileInfo.Name, pattern);
+                if (folderName.Length <= 0) continue;
+                var newFolder = new DirectoryInfo(gshStoragePath + "\\" + folderName);
+                if (!newFolder.Exists)
+                    newFolder.Create();
+
+                fileInfo.MoveTo(newFolder.FullName + @"\" + fileInfo.Name);
+            }
         }
     }
 }
